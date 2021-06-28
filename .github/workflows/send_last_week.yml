@@ -1,0 +1,37 @@
+name: send-pdf-last-week
+
+on:
+  workflow_dispatch:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron: "30 6 * * 1"
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip        
+          pip install -r requirements.txt
+          sudo apt-get install pandoc
+          sudo apt-get install texlive-latex-base
+          sudo apt-get install texlive-fonts-recommended
+          sudo apt-get install texlive-fonts-extra
+      - name: Compile and send
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
+          RECEIVER: ${{ secrets.RECEIVER_EMAIL }}
+          SENDER: ${{ secrets.SENDER_EMAIL }}
+          PORT: ${{ secrets.PORT }}
+          SMTPHOST: ${{ secrets.SMTPHOST }}
+        run: |
+          python compile_last_cw.py pdf
+          python compile_last_cw.py html
+          python sendmail.py
